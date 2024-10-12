@@ -76,4 +76,27 @@ body {
     opacity: 0.8;
 }
  
+#adoption-stories h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
   
+  #adoption-stories .card {
+    transition: transform 0.3s;
+  }
+  
+  #adoption-stories .card:hover {
+    transform: scale(1.05);
+  }
+  
+  #adoption-stories img {
+    height: 250px;
+    object-fit: cover;
+  }
+   /* Footer Styling */
+   .footer {
+    background-color: #74B49B;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+  }
