@@ -67,7 +67,13 @@ body {
   .carousel-caption p {
     font-size: 1.2rem;
   }
-
-  
+.btn_1{
+    background-color: #2C3E50;
+    border-radius: 20px;
+    border: none;
+}
+.btn_1:hover{
+    opacity: 0.8;
+}
  
   
