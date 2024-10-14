@@ -161,3 +161,30 @@ body {
   .forgot-password-link:hover {
     text-decoration: underline;
   }
+  .form-select {
+    background-color: #fff;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+  
+  .card {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 10px;
+  }
+  
+  .card-img-top {
+    height: 250px;
+    object-fit: cover;
+  }
+  
+  .save-btn {
+    width: 100%;
+    border-radius: 20px;
+  }
+  
+  .save-btn:hover {
+    background-color: #74B49B; /* Muted teal */
+    color: white;
+  }
