@@ -2,7 +2,7 @@
   "name": "409-capestone-project",
   "version": "1.0.0",
   "description": "A capstone project for PawMatch",
-  "main": "server.js",     
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
@@ -11,7 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "mysql": "^2.18.1"
+    "helmet": "^8.0.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.3"
   }
 }
