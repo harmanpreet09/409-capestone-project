@@ -144,6 +144,25 @@ app.post('/api/logout', (req, res) => {
     res.status(200).json({ message: 'Logout successful' });
   });
 });
+// API route for adoption form submission
+app.post('/api/adoption', (req, res) => {
+  const { petName, userName, contactEmail, message } = req.body;
+
+  // Basic validation
+  if (!petName || !userName || !contactEmail || !message) {
+    return res.status(400).json({ success: false, error: 'All fields are required' });
+  }
+
+  // Insert adoption request into the database (example table: adoption_requests)
+  const sql = 'INSERT INTO adoption_requests (pet_name, user_name, contact_email, message, status) VALUES (?, ?, ?, ?, ?)';
+  db.query(sql, [petName, userName, contactEmail, message, 'Submitted'], (err, result) => {
+    if (err) {
+      console.error('Error inserting adoption request:', err);
+      return res.status(500).json({ success: false, error: 'Failed to submit the form' });
+    }
+    res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
+  });
+});
 
 // Start the server
 app.listen(4000, () => {
