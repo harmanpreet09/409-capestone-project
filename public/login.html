@@ -47,7 +47,7 @@
     <div class="login-header-section">
       <h2>Login to PawMatch</h2>
     </div>
-    <form id="loginForm" action="/login" method="POST">
+    <form id="loginForm" action="/api/login" method="POST">
       <div class="mb-3">
         <label for="email" class="form-label">Email Address</label>
         <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
@@ -57,7 +57,7 @@
         <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
       </div>
       <div class="login-button-container">
-        <button type="submit" class="btn login-btn-custom">Login</button>
+        <button type="submit" class="btn btn-primary login-btn-custom">Login</button>
       </div>
     </form>
 
@@ -71,5 +71,6 @@
       </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="login.js"></script>
 </body>
 </html>
