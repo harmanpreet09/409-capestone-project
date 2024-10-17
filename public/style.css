@@ -373,4 +373,78 @@ body {
 .custom-btn-submit:hover {
   background-color: #FFC107;
 }
+.advice-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* h1, h2 {
+  text-align: center;
+  color: #2C3E50;
+  margin-bottom: 20px;
+} */
+
+.advice-text {
+  font-size: 18px;
+  color: #7B7B7B;
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* Common Questions Section */
+.common-questions {
+  margin-bottom: 40px;
+}
+
+.question-box {
+  margin-bottom: 20px;
+  padding: 20px;
+  background-color: #F9F9F9;
+  border-radius: 8px;
+}
+
+.question-box h3 {
+  color: #74B49B;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.question-box p {
+  font-size: 16px;
+  color: #7B7B7B;
+}
+
+/* Additional Advice Section */
+.additional-advice {
+  background-color: #F9F9F9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 40px;
+}
+
+.additional-advice p {
+  font-size: 16px;
+  color: #7B7B7B;
+  margin-bottom: 20px;
+}
+
+.advice-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.advice-list li {
+  font-size: 16px;
+  color: #2C3E50;
+  margin-bottom: 15px;
+}
+
+.advice-list li strong {
+  color: #74B49B;
+}
 
