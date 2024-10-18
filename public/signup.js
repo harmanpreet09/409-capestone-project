@@ -1,6 +1,7 @@
 document.getElementById('signupForm').addEventListener('submit', function(event) {
     event.preventDefault(); // Prevent default form submission behavior
   
+    // Collect form data
     const formData = {
       username: document.getElementById('username').value,
       email: document.getElementById('email').value,
@@ -22,14 +23,23 @@ document.getElementById('signupForm').addEventListener('submit', function(event)
       },
       body: JSON.stringify(formData),
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.message) {
-        alert(data.message); // Show success or error message
-      } else {
-        alert('user already exist');
+        alert(data.message); // Show success message or backend message
+        // Redirect to homepage on successful signup
+        window.location.href = '/'; // Adjust this to your homepage route
+      } else if (data.error) {
+        alert(data.error); // Show error message from backend
       }
     })
-    .catch(error => console.error('Error:', error));
-  });
-  
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    });
+});
