@@ -87,49 +87,47 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-// API route to filter pets
+// API route to filter and sort pets
+// API route to filter and sort pets
 app.post('/api/filterPets', (req, res) => {
-  const { breed, size, age, sortBy = 'name', sortOrder = 'ASC' } = req.body;
-  let sql = "SELECT * FROM pets WHERE 1=1";
+  const { breed, size, age, sortBy = 'name', sortOrder = 'ASC', searchQuery } = req.body;
+  let sql = "SELECT * FROM pets WHERE 1=1";  // 1=1 allows dynamic adding of WHERE clauses
   const params = [];
 
+  // Apply breed filter if selected
   if (breed) {
     sql += " AND breed = ?";
     params.push(breed);
   }
+
+  // Apply size filter if selected
   if (size) {
     sql += " AND size = ?";
     params.push(size);
   }
+
+  // Apply age filter if selected
   if (age) {
     sql += " AND age = ?";
     params.push(age);
   }
 
+  // Search by pet name or breed
+  if (searchQuery) {
+    sql += " AND (LOWER(name) LIKE ? OR LOWER(breed) LIKE ?)";
+    params.push(`%${searchQuery}%`, `%${searchQuery}%`);  // Add wildcards for partial matches
+  }
+
+  // Sorting by user preference (default is by name)
   sql += ` ORDER BY ${sortBy} ${sortOrder}`;
 
-  db.query(sql, params, async (err, results) => {
+  db.query(sql, params, (err, results) => {
     if (err) {
-      res.status(500).json({ error: 'Error fetching pets' });
+      return res.status(500).json({ error: 'Error fetching pets' });
     }
-
-    // Fetch images from Pexels if not present in the database
-    for (let pet of results) {
-      if (!pet.image || pet.image === '') {
-        pet.image = await getPetImage(pet.breed);
-
-        // Optionally update the database with the new image URL
-        const updateSql = "UPDATE pets SET image = ? WHERE id = ?";
-        db.query(updateSql, [pet.image, pet.id], (updateErr) => {
-          if (updateErr) console.error('Error updating pet image:', updateErr);
-        });
-      }
-    }
-
-    res.json(results);
+    res.json(results);  // Send the filtered/sorted pets back to the frontend
   });
 });
-
 // API route for user signup
 app.post('/api/signup', async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
