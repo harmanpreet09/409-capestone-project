@@ -24,9 +24,7 @@ document.getElementById('signupForm').addEventListener('submit', function(event)
       body: JSON.stringify(formData),
     })
     .then(response => {
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+
       return response.json();
     })
     .then(data => {

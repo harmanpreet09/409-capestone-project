@@ -87,45 +87,49 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-// API route to filter and sort pets
-// API route to filter and sort pets
+app.get('/api/locations', (req, res) => {
+  const sql = "SELECT id, name FROM locations";
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching locations' });
+    }
+    res.json(results);
+  });
+});
+
+// Define the /api/filterPets route
 app.post('/api/filterPets', (req, res) => {
-  const { breed, size, age, sortBy = 'name', sortOrder = 'ASC', searchQuery } = req.body;
-  let sql = "SELECT * FROM pets WHERE 1=1";  // 1=1 allows dynamic adding of WHERE clauses
+  const { breed, size, age, location_id, sortBy = 'name', sortOrder = 'ASC', searchQuery } = req.body;
+  let sql = "SELECT * FROM pets WHERE 1=1";  // Allows dynamic WHERE clauses
   const params = [];
 
-  // Apply breed filter if selected
   if (breed) {
     sql += " AND breed = ?";
     params.push(breed);
   }
-
-  // Apply size filter if selected
   if (size) {
     sql += " AND size = ?";
     params.push(size);
   }
-
-  // Apply age filter if selected
   if (age) {
     sql += " AND age = ?";
     params.push(age);
   }
-
-  // Search by pet name or breed
+  if (location_id) {
+    sql += " AND location_id = ?";
+    params.push(location_id);
+  }
   if (searchQuery) {
     sql += " AND (LOWER(name) LIKE ? OR LOWER(breed) LIKE ?)";
-    params.push(`%${searchQuery}%`, `%${searchQuery}%`);  // Add wildcards for partial matches
+    params.push(`%${searchQuery}%`, `%${searchQuery}%`);
   }
-
-  // Sorting by user preference (default is by name)
   sql += ` ORDER BY ${sortBy} ${sortOrder}`;
 
   db.query(sql, params, (err, results) => {
     if (err) {
       return res.status(500).json({ error: 'Error fetching pets' });
     }
-    res.json(results);  // Send the filtered/sorted pets back to the frontend
+    res.json(results);
   });
 });
 // API route for user signup
@@ -138,12 +142,13 @@ app.post('/api/signup', async (req, res) => {
   }
 
   const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
+  console.log({ checkEmailSql })
   db.query(checkEmailSql, [email], async (err, results) => {
     if (err) {
       res.status(500).json({ error: 'Error checking email' });
       return;
     }
-
+console.log({ results });
     if (results.length > 0) {
       res.status(400).json({ error: 'Email is already registered' });
       return;
@@ -172,6 +177,7 @@ app.post('/api/login', (req, res) => {
   }
 
   const sql = 'SELECT * FROM users WHERE email = ?';
+  
   db.query(sql, [email], async (err, results) => {
     if (err) {
       res.status(500).json({ error: 'Error fetching user' });
