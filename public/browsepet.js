@@ -32,7 +32,7 @@ function filterButton() {
   const filters = { breed, size, age, location_id, sortBy, sortOrder };
 
   const petListings = document.getElementById('petListings');
-  petListings.innerHTML = '<p>Loading pets...</p>';
+  petListings.textContent = 'Loading pets...';
 
   fetch('http://localhost:4000/api/filterPets', {
     method: 'POST',
@@ -43,52 +43,100 @@ function filterButton() {
   })
     .then(response => response.json())
     .then(pets => {
-      petListings.innerHTML = '';
+      // Clear previous listings
+      petListings.textContent = '';
 
       if (pets.length === 0) {
-        petListings.innerHTML = '<p>No pets found matching your filters.</p>';
+        const noPetsMsg = document.createElement('p');
+        noPetsMsg.textContent = 'No pets found matching your filters.';
+        petListings.appendChild(noPetsMsg);
         return;
       }
 
       pets.forEach(pet => {
-        const petCard = `
-          <div class="col-md-4 mb-4">
-            <div class="card">
-              <img src="${pet.image}" class="card-img-top" alt="${pet.name}" onerror="this.src='/images/default-pet-image.jpg'">
-              <div class="card-body">
-                <h5 class="card-title">${pet.name}</h5>
-                <p class="card-text">${pet.breed}, ${pet.age}</p>
-                <p>Size: ${pet.size}</p>
-                <button class="btn btn-primary mt-2" onclick="showPetModal('${pet.name}', '${pet.breed}', '${pet.age}', '${pet.size}', '${pet.image}')">MORE INFORMATION</button>
-              </div>
-            </div>
-          </div>
-        `;
-        petListings.innerHTML += petCard;
+        const colDiv = document.createElement('div');
+        colDiv.classList.add('col-md-4', 'mb-4');
+
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card');
+
+        const petImg = document.createElement('img');
+        petImg.src = pet.image;
+        petImg.alt = pet.name;
+        petImg.classList.add('card-img-top');
+        petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
+
+        const cardBody = document.createElement('div');
+        cardBody.classList.add('card-body');
+
+        const petTitle = document.createElement('h5');
+        petTitle.classList.add('card-title');
+        petTitle.textContent = pet.name;
+
+        const petInfo = document.createElement('p');
+        petInfo.classList.add('card-text');
+        petInfo.textContent = `${pet.breed}, ${pet.age}`;
+
+        const petSize = document.createElement('p');
+        petSize.textContent = `Size: ${pet.size}`;
+
+        const moreInfoButton = document.createElement('button');
+        moreInfoButton.classList.add('btn', 'btn-primary', 'mt-2');
+        moreInfoButton.textContent = 'MORE INFORMATION';
+        moreInfoButton.onclick = function() {
+          showPetModal(pet.name, pet.breed, pet.age, pet.size, pet.image);
+        };
+
+        // Append elements to create the card structure
+        cardBody.appendChild(petTitle);
+        cardBody.appendChild(petInfo);
+        cardBody.appendChild(petSize);
+        cardBody.appendChild(moreInfoButton);
+        cardDiv.appendChild(petImg);
+        cardDiv.appendChild(cardBody);
+        colDiv.appendChild(cardDiv);
+        petListings.appendChild(colDiv);
       });
     })
     .catch(error => {
       console.error('Error fetching pets:', error);
-      petListings.innerHTML = '<p>Failed to fetch pets. Please try again later.</p>';
+      const errorMsg = document.createElement('p');
+      errorMsg.textContent = 'Failed to fetch pets. Please try again later.';
+      petListings.appendChild(errorMsg);
     });
 }
 
 // Function to show pet details in a modal
 function showPetModal(name, breed, age, size, image) {
   document.getElementById('petModalLabel').textContent = name;
-  document.getElementById('petModalBody').innerHTML = `
-    <img src="${image}" class="img-fluid mb-3" alt="${name}" onerror="this.src='/images/default-pet-image.jpg'">
-    <p><strong>Breed:</strong> ${breed}</p>
-    <p><strong>Age:</strong> ${age}</p>
-    <p><strong>Size:</strong> ${size}</p>
-  `;
+
+  const petModalBody = document.getElementById('petModalBody');
+  petModalBody.textContent = ''; // Clear previous content
+
+  const petImg = document.createElement('img');
+  petImg.src = image;
+  petImg.alt = name;
+  petImg.classList.add('img-fluid', 'mb-3');
+  petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
+
+  const breedPara = document.createElement('p');
+  breedPara.textContent = `Breed: ${breed}`;
+
+  const agePara = document.createElement('p');
+  agePara.textContent = `Age: ${age}`;
+
+  const sizePara = document.createElement('p');
+  sizePara.textContent = `Size: ${size}`;
+
+  petModalBody.appendChild(petImg);
+  petModalBody.appendChild(breedPara);
+  petModalBody.appendChild(agePara);
+  petModalBody.appendChild(sizePara);
 
   // Set the adoption link in the modal
-  document.getElementById('adoptionLink').href = `/how-to.html?petName=${name}`;
+  document.getElementById('adoptionLink').href = `/how-to.html?petName=${encodeURIComponent(name)}`;
 
   // Show the modal
   const petModal = new bootstrap.Modal(document.getElementById('petModal'));
   petModal.show();
 }
-
-document.addEventListener('DOMContentLoaded', filterButton, false);

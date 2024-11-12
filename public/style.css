@@ -382,11 +382,7 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* h1, h2 {
-  text-align: center;
-  color: #2C3E50;
-  margin-bottom: 20px;
-} */
+
 
 .advice-text {
   font-size: 18px;
@@ -448,3 +444,130 @@ body {
   color: #74B49B;
 }
 
+.carousel-caption {
+  color: #FAF3DD;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+ /* Section Styles */
+ .why-adopt-section {
+  background-color: #fff;
+  color: #2C3E50; /* Dark Blue-Gray */
+  padding: 40px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.featured-pets-section {
+  background-color: #e2dbc8; 
+  color: #2C3E50;
+  padding: 40px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+/* Testimonials Section */
+.testimonials-section {
+  background-color: #FAF3DD; /* Light Cream */
+  padding: 40px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.testimonials-section h2 {
+  color: #2C3E50; /* Dark Blue-Gray */
+}
+
+.testimonial-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+}
+
+.testimonial-card i {
+  color: #FFC107; /* Bright Amber */
+}
+
+.testimonial-text {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #555;
+  margin: 0 0 10px;
+}
+
+.testimonial-author {
+  font-weight: bold;
+  color: #2C3E50;
+}
+
+
+.volunteer-support-section {
+  background-color: #74B49B; /* Muted Teal */
+  color: #FFFFFF;
+  padding: 40px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+
+/* Card Styles for Featured Pets */
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  color: #2C3E50;
+}
+
+.card-text {
+  color: #555;
+}
+
+.btn-primary {
+  background-color: #74B49B; /* Muted Teal */
+  border: none;
+}
+.btn-primary:hover {
+  background-color: #5a937c; /* Darker Teal */
+}
+/* Mission & Values Section */
+.mission-values-section {
+  background-color: #e2dbc8; /* Light Cream */
+  border-radius: 10px;
+  padding: 40px;
+  margin-top: 20px;
+}
+
+.mission-values-section h2 {
+  color: #2C3E50; /* Dark Blue-Gray */
+}
+
+.mission-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mission-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mission-card i {
+  color: #FFC107; /* Bright Amber */
+}
+
+.mission-card h5 {
+  color: #2C3E50;
+  font-weight: bold;
+}
+
+.mission-card p {
+  color: #555;
+}

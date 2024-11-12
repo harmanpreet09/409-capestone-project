@@ -1,4 +1,3 @@
-
 document.getElementById('adoptionForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
@@ -18,13 +17,30 @@ document.getElementById('adoptionForm').addEventListener('submit', function(e) {
   })
   .then(response => response.json())
   .then(data => {
+    const formResponse = document.getElementById('formResponse');
+    formResponse.textContent = ''; // Clear any previous messages
+
+    const alertDiv = document.createElement('div');
+    alertDiv.classList.add('alert');
+
     if (data.success) {
-      document.getElementById('formResponse').innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+      alertDiv.classList.add('alert-success');
+      alertDiv.textContent = data.message;
     } else {
-      document.getElementById('formResponse').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+      alertDiv.classList.add('alert-danger');
+      alertDiv.textContent = data.error;
     }
+
+    formResponse.appendChild(alertDiv);
   })
   .catch(error => {
-    document.getElementById('formResponse').innerHTML = `<div class="alert alert-danger">Error submitting form</div>`;
+    const formResponse = document.getElementById('formResponse');
+    formResponse.textContent = ''; // Clear any previous messages
+
+    const alertDiv = document.createElement('div');
+    alertDiv.classList.add('alert', 'alert-danger');
+    alertDiv.textContent = 'Error submitting form';
+
+    formResponse.appendChild(alertDiv);
   });
 });

@@ -143,21 +143,33 @@
         const loginButton = document.querySelector('.login-btn');
         const signupButton = document.querySelector('.signup-btn');
         const userInfo = document.createElement('div');
-
+        userInfo.classList.add('user-info'); // Optional: add a class for styling
+  
         if (data.loggedIn) {
           // If the user is logged in, show the username and logout button
-          userInfo.innerHTML = `<span>Welcome, ${data.user.username}</span> <button class="btn logout-btn">Logout</button>`;
+          const welcomeMessage = document.createElement('span');
+          welcomeMessage.textContent = `Welcome, ${data.user.username}`;
+  
+          const logoutButton = document.createElement('button');
+          logoutButton.classList.add('btn', 'logout-btn');
+          logoutButton.textContent = 'Logout';
+  
+          // Append the elements
+          userInfo.appendChild(welcomeMessage);
+          userInfo.appendChild(logoutButton);
+  
           loginButton.style.display = 'none';
           signupButton.style.display = 'none';
           document.querySelector('.d-flex').appendChild(userInfo);
-
+  
           // Add logout functionality
-          document.querySelector('.logout-btn').addEventListener('click', function() {
+          logoutButton.addEventListener('click', function() {
             fetch('/api/logout', { method: 'POST' })
               .then(() => window.location.href = '/'); // Redirect to home after logout
           });
         }
       });
   </script>
+  
 </body>
 </html>
