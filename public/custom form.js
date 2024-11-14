@@ -2,9 +2,9 @@ document.getElementById('adoptionForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
   const formData = {
-    petName: document.getElementById('petName').value,
-    userName: document.getElementById('userName').value,
-    contactEmail: document.getElementById('contactEmail').value,
+    pet_name: document.getElementById('petName').value, // Change to pet_name
+    user_name: document.getElementById('userName').value, // Change to user_name
+    contact_email: document.getElementById('contactEmail').value, // Change to contact_email
     message: document.getElementById('message').value
   };
 

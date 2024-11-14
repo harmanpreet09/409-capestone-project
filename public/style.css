@@ -571,3 +571,36 @@ body {
 .mission-card p {
   color: #555;
 }
+.status-pending {
+  color: orange;
+}
+
+.status-under-process {
+  color: blue;
+}
+
+.status-completed {
+  color: green;
+}
+
+.application-item {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+}
+/* styles.css */
+#status-container {
+  margin: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.application-status {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.application-status p {
+  margin: 5px 0;
+}

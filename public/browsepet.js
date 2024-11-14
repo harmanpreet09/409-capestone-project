@@ -17,19 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(error => console.error('Error fetching locations:', error));
 
-  // Run initial filter to load pets without filters applied
+  // Run initial filter to load pets without filters applied, ensuring elements are fully loaded
+  filterButton();
+});
+
+document.getElementById('filterBtn').addEventListener('click', function() {
   filterButton();
 });
 
 function filterButton() {
-  const breed = document.getElementById('filterBreed').value;
-  const size = document.getElementById('filterSize').value;
-  const age = document.getElementById('filterAge').value;
-  const location_id = document.getElementById('filterLocation').value;
-  const sortBy = document.getElementById('sortBy').value;
-  const sortOrder = document.getElementById('sortOrder').value;
+  // Safely get element values, using optional chaining (?.) to prevent null access
+  const breed = document.getElementById('filterBreed')?.value || '';
+  const size = document.getElementById('filterSize')?.value || '';
+  const age = document.getElementById('filterAge')?.value || '';
+  const location_id = document.getElementById('filterLocation')?.value || '';
+  const type = document.getElementById('filterType')?.value || ''; // Capture type from dropdown
+  const sortBy = document.getElementById('sortBy')?.value || 'name';
+  const sortOrder = document.getElementById('sortOrder')?.value || 'ASC';
 
-  const filters = { breed, size, age, location_id, sortBy, sortOrder };
+  const filters = { breed, size, age, location_id, type, sortBy, sortOrder };
 
   const petListings = document.getElementById('petListings');
   petListings.textContent = 'Loading pets...';
@@ -43,7 +49,6 @@ function filterButton() {
   })
     .then(response => response.json())
     .then(pets => {
-      // Clear previous listings
       petListings.textContent = '';
 
       if (pets.length === 0) {
@@ -64,6 +69,7 @@ function filterButton() {
         petImg.src = pet.image;
         petImg.alt = pet.name;
         petImg.classList.add('card-img-top');
+        petImg.loading = 'lazy';
         petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
 
         const cardBody = document.createElement('div');
