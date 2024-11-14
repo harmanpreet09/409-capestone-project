@@ -108,7 +108,15 @@ app.post('/api/filterPets', (req, res) => {
     res.json(results);
   });
 });
-
+app.get('/api/locations', (req, res) => {
+  const sql = 'SELECT * FROM locations'; // Adjust based on your locations table
+  queryDatabase(sql, [], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching locations' });
+    }
+    res.json(results);
+  });
+});
 
 // Define the routes
 app.post('/api/signup', async (req, res) => {
