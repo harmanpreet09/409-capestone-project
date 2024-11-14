@@ -48,9 +48,13 @@ function filterButton() {
   })
     .then(response => response.json())
     .then(pets => {
-      // Clear previous listings
+      console.log('Pets response:', pets);
       petListings.textContent = '';
-
+  
+      if (!Array.isArray(pets)) {
+        throw new Error('Expected an array but got a different data type');
+      }
+  
       if (pets.length === 0) {
         const noPetsMsg = document.createElement('p');
         noPetsMsg.textContent = 'No pets found matching your filters.';
@@ -114,16 +118,37 @@ function filterButton() {
 }
 
 function showPetModal(name, breed, age, size, image) {
-  // Set the modal content
-  document.getElementById('petModalLabel').textContent = name;
-  document.getElementById('petModalBody').innerHTML = `
-    <p><strong>Breed:</strong> ${breed}</p>
-    <p><strong>Age:</strong> ${age}</p>
-    <p><strong>Size:</strong> ${size}</p>
-    <img src="${image}" alt="${name}" class="img-fluid" onerror="this.src='/images/default-pet-image.jpg';">
-  `;
+  // Set the modal title
+  const modalTitle = document.getElementById('petModalLabel');
+  modalTitle.textContent = name;
 
-  // Show the modal using Bootstrap's JavaScript API
-  const petModal = new bootstrap.Modal(document.getElementById('petModal'), {});
+  // Clear any existing content in the modal body
+  const modalBody = document.getElementById('petModalBody');
+  while (modalBody.firstChild) {
+    modalBody.removeChild(modalBody.firstChild);
+  }
+
+  // Create and append the image element
+  const petImage = document.createElement('img');
+  petImage.src = image;
+  petImage.alt = name;
+  petImage.style.width = '100%';
+  petImage.style.marginBottom = '15px';
+  modalBody.appendChild(petImage);
+
+  const breedInfo = document.createElement('p');
+  breedInfo.textContent = `Breed: ${breed}`;
+  modalBody.appendChild(breedInfo);
+
+  const ageInfo = document.createElement('p');
+  ageInfo.textContent = `Age: ${age}`;
+  modalBody.appendChild(ageInfo);
+
+  const sizeInfo = document.createElement('p');
+  sizeInfo.textContent = `Size: ${size}`;
+  modalBody.appendChild(sizeInfo);
+
+  // Initialize and show the modal using Bootstrap's modal API
+  const petModal = new bootstrap.Modal(document.getElementById('petModal'));
   petModal.show();
 }

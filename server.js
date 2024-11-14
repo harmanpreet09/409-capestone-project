@@ -93,6 +93,7 @@ function isAuthenticated(req, res, next) {
   }
 }
 // Route to filter pets based on criteria
+// Route to filter pets based on criteria
 app.post('/api/filterPets', (req, res) => {
   const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
   let sql = 'SELECT * FROM pets WHERE 1=1'; // Base query
@@ -128,18 +129,22 @@ app.post('/api/filterPets', (req, res) => {
       console.error('Error fetching pets:', err);
       return res.status(500).json({ error: 'Error fetching pets' });
     }
-    res.json(results);
+    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
   });
 });
+
+// Route to fetch locations
 app.get('/api/locations', (req, res) => {
   const sql = 'SELECT * FROM locations'; // Adjust based on your locations table
   queryDatabase(sql, [], (err, results) => {
     if (err) {
+      console.error('Error fetching locations:', err);
       return res.status(500).json({ error: 'Error fetching locations' });
     }
-    res.json(results);
+    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
   });
 });
+
 
 // Define the routes
 app.post('/api/signup', async (req, res) => {
