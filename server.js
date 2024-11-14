@@ -13,9 +13,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-
-// Middleware setup
-app.use(cors());
+app.use(cors({
+  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with the actual frontend URL without /index.html
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -28,9 +29,31 @@ app.use(
     secret: 'yourSecretKey', // Use a strong secret key
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' },
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      httpOnly: true,
+      sameSite: 'lax', // Lax is recommended for cross-site cookies
+    }
   })
 );
+
+// Middleware setup
+// app.use(cors());
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// // Serve static files
+// app.use(express.static(path.join(__dirname, 'public')));
+
+// // Configure session middleware
+// app.use(
+//   session({
+//     secret: 'yourSecretKey', // Use a strong secret key
+//     resave: false,
+//     saveUninitialized: false,
+//     cookie: { secure: process.env.NODE_ENV === 'production' },
+//   })
+// );
 
 // MySQL connection pool setup
 const dbConfig = {
