@@ -69,6 +69,46 @@ function isAuthenticated(req, res, next) {
     res.status(401).json({ success: false, error: 'You must be logged in to access this resource' });
   }
 }
+// Route to filter pets based on criteria
+app.post('/api/filterPets', (req, res) => {
+  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
+  let sql = 'SELECT * FROM pets WHERE 1=1'; // Base query
+  const params = [];
+
+  // Add conditions based on the received filters
+  if (type) {
+    sql += ' AND type = ?';
+    params.push(type);
+  }
+  if (breed) {
+    sql += ' AND breed = ?';
+    params.push(breed);
+  }
+  if (size) {
+    sql += ' AND size = ?';
+    params.push(size);
+  }
+  if (age) {
+    sql += ' AND age = ?';
+    params.push(age);
+  }
+  if (location_id) {
+    sql += ' AND location_id = ?';
+    params.push(location_id);
+  }
+
+  // Add sorting
+  sql += ` ORDER BY ${sortBy} ${sortOrder}`;
+
+  queryDatabase(sql, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pets:', err);
+      return res.status(500).json({ error: 'Error fetching pets' });
+    }
+    res.json(results);
+  });
+});
+
 
 // Define the routes
 app.post('/api/signup', async (req, res) => {
