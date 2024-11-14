@@ -112,3 +112,18 @@ function filterButton() {
       petListings.appendChild(errorMsg);
     });
 }
+
+function showPetModal(name, breed, age, size, image) {
+  // Set the modal content
+  document.getElementById('petModalLabel').textContent = name;
+  document.getElementById('petModalBody').innerHTML = `
+    <p><strong>Breed:</strong> ${breed}</p>
+    <p><strong>Age:</strong> ${age}</p>
+    <p><strong>Size:</strong> ${size}</p>
+    <img src="${image}" alt="${name}" class="img-fluid" onerror="this.src='/images/default-pet-image.jpg';">
+  `;
+
+  // Show the modal using Bootstrap's JavaScript API
+  const petModal = new bootstrap.Modal(document.getElementById('petModal'), {});
+  petModal.show();
+}
