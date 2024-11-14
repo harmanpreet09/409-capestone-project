@@ -2,7 +2,7 @@ import express from 'express';
 import mysql from 'mysql';
 import cors from 'cors';
 import path from 'path';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
