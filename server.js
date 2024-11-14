@@ -146,7 +146,14 @@ app.post('/api/signup', async (req, res) => {
     });
   });
 });
-
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to logout' });
+    }
+    res.status(200).json({ message: 'Logout successful' });
+  });
+});
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
