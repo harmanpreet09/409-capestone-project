@@ -1,46 +1,65 @@
 document.getElementById('adoptionForm').addEventListener('submit', function(e) {
   e.preventDefault();
 
-  const formData = {
-    pet_name: document.getElementById('petName').value, // Change to pet_name
-    user_name: document.getElementById('userName').value, // Change to user_name
-    contact_email: document.getElementById('contactEmail').value, // Change to contact_email
-    message: document.getElementById('message').value
-  };
+  // Check if the user is logged in
+  fetch('/api/session')
+    .then(response => response.json())
+    .then(data => {
+      const formResponse = document.getElementById('formResponse');
+      formResponse.textContent = ''; // Clear any previous messages
 
-  fetch('/api/adoption', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(formData),
-  })
-  .then(response => response.json())
-  .then(data => {
-    const formResponse = document.getElementById('formResponse');
-    formResponse.textContent = ''; // Clear any previous messages
+      if (data.loggedIn) {
+        // User is logged in, proceed with form submission
+        const formData = {
+          pet_name: document.getElementById('petName').value,
+          user_name: document.getElementById('userName').value,
+          contact_email: document.getElementById('contactEmail').value,
+          message: document.getElementById('message').value
+        };
 
-    const alertDiv = document.createElement('div');
-    alertDiv.classList.add('alert');
+        fetch('/api/adoption', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        })
+        .then(response => response.json())
+        .then(data => {
+          const alertDiv = document.createElement('div');
+          alertDiv.classList.add('alert');
 
-    if (data.success) {
-      alertDiv.classList.add('alert-success');
-      alertDiv.textContent = data.message;
-    } else {
-      alertDiv.classList.add('alert-danger');
-      alertDiv.textContent = data.error;
-    }
+          if (data.success) {
+            alertDiv.classList.add('alert-success');
+            alertDiv.textContent = data.message;
+          } else {
+            alertDiv.classList.add('alert-danger');
+            alertDiv.textContent = data.error;
+          }
 
-    formResponse.appendChild(alertDiv);
-  })
-  .catch(error => {
-    const formResponse = document.getElementById('formResponse');
-    formResponse.textContent = ''; // Clear any previous messages
+          formResponse.appendChild(alertDiv);
+        })
+        .catch(error => {
+          const alertDiv = document.createElement('div');
+          alertDiv.classList.add('alert', 'alert-danger');
+          alertDiv.textContent = 'Error submitting form';
 
-    const alertDiv = document.createElement('div');
-    alertDiv.classList.add('alert', 'alert-danger');
-    alertDiv.textContent = 'Error submitting form';
-
-    formResponse.appendChild(alertDiv);
-  });
+          formResponse.appendChild(alertDiv);
+        });
+      } else {
+        // User is not logged in, show error message
+        const alertDiv = document.createElement('div');
+        alertDiv.classList.add('alert', 'alert-danger');
+        alertDiv.textContent = 'Please log in to submit an adoption request.';
+        formResponse.appendChild(alertDiv);
+      }
+    })
+    .catch(error => {
+      console.error('Error checking login status:', error);
+      const formResponse = document.getElementById('formResponse');
+      const alertDiv = document.createElement('div');
+      alertDiv.classList.add('alert', 'alert-danger');
+      alertDiv.textContent = 'Error checking login status';
+      formResponse.appendChild(alertDiv);
+    });
 });

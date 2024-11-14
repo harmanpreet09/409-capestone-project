@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   function fetchStatus(email) {
+    const statusResponse = document.getElementById('statusResponse');
+    statusResponse.textContent = ''; // Clear previous messages
+  
     fetch('/api/checkStatus', {
       method: 'POST',
       headers: {
@@ -32,30 +35,36 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .then(response => response.json())
     .then(data => {
-      const statusResponse = document.getElementById('statusResponse');
       statusResponse.textContent = ''; // Clear previous messages
   
       if (data.success) {
         if (data.applications.length === 0) {
           statusResponse.textContent = 'No applications found.';
         } else {
+          // Display each application with a styled alert box
           data.applications.forEach(app => {
             const statusDiv = document.createElement('div');
-            statusDiv.classList.add('alert', 'alert-info');
+            statusDiv.classList.add('alert', 'alert-info', 'mt-2');
             statusDiv.textContent = `Pet: ${app.pet_name} - Status: ${app.status}`;
             statusResponse.appendChild(statusDiv);
           });
         }
       } else {
+        // Display error message if there's an issue with the response
         const errorDiv = document.createElement('div');
-        errorDiv.classList.add('alert', 'alert-danger');
-        errorDiv.textContent = data.error;
+        errorDiv.classList.add('alert', 'alert-danger', 'mt-2');
+        errorDiv.textContent = data.error || 'An unexpected error occurred.';
         statusResponse.appendChild(errorDiv);
       }
     })
     .catch(error => {
-      const statusResponse = document.getElementById('statusResponse');
-      statusResponse.textContent = 'Error checking status';
+      // Handle fetch errors
+      statusResponse.textContent = '';
+      const errorDiv = document.createElement('div');
+      errorDiv.classList.add('alert', 'alert-danger', 'mt-2');
+      errorDiv.textContent = 'Error checking status. Please try again later.';
+      statusResponse.appendChild(errorDiv);
+      console.error('Error:', error);
     });
   }
   

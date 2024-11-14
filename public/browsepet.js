@@ -17,29 +17,28 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(error => console.error('Error fetching locations:', error));
 
-  // Run initial filter to load pets without filters applied, ensuring elements are fully loaded
-  filterButton();
-});
-
-document.getElementById('filterBtn').addEventListener('click', function() {
+  // Run initial filter to load pets without filters applied
   filterButton();
 });
 
 function filterButton() {
-  // Safely get element values, using optional chaining (?.) to prevent null access
+  // Capture the values of all filters
   const breed = document.getElementById('filterBreed')?.value || '';
   const size = document.getElementById('filterSize')?.value || '';
   const age = document.getElementById('filterAge')?.value || '';
   const location_id = document.getElementById('filterLocation')?.value || '';
-  const type = document.getElementById('filterType')?.value || ''; // Capture type from dropdown
+  const type = document.getElementById('filterType')?.value || '';
   const sortBy = document.getElementById('sortBy')?.value || 'name';
   const sortOrder = document.getElementById('sortOrder')?.value || 'ASC';
 
+  // Prepare the filters object
   const filters = { breed, size, age, location_id, type, sortBy, sortOrder };
 
+  // Display a loading message
   const petListings = document.getElementById('petListings');
   petListings.textContent = 'Loading pets...';
 
+  // Send the filters to the backend
   fetch('http://localhost:4000/api/filterPets', {
     method: 'POST',
     headers: {
@@ -49,6 +48,7 @@ function filterButton() {
   })
     .then(response => response.json())
     .then(pets => {
+      // Clear previous listings
       petListings.textContent = '';
 
       if (pets.length === 0) {
@@ -58,6 +58,7 @@ function filterButton() {
         return;
       }
 
+      // Display each pet card
       pets.forEach(pet => {
         const colDiv = document.createElement('div');
         colDiv.classList.add('col-md-4', 'mb-4');
@@ -110,39 +111,4 @@ function filterButton() {
       errorMsg.textContent = 'Failed to fetch pets. Please try again later.';
       petListings.appendChild(errorMsg);
     });
-}
-
-// Function to show pet details in a modal
-function showPetModal(name, breed, age, size, image) {
-  document.getElementById('petModalLabel').textContent = name;
-
-  const petModalBody = document.getElementById('petModalBody');
-  petModalBody.textContent = ''; // Clear previous content
-
-  const petImg = document.createElement('img');
-  petImg.src = image;
-  petImg.alt = name;
-  petImg.classList.add('img-fluid', 'mb-3');
-  petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
-
-  const breedPara = document.createElement('p');
-  breedPara.textContent = `Breed: ${breed}`;
-
-  const agePara = document.createElement('p');
-  agePara.textContent = `Age: ${age}`;
-
-  const sizePara = document.createElement('p');
-  sizePara.textContent = `Size: ${size}`;
-
-  petModalBody.appendChild(petImg);
-  petModalBody.appendChild(breedPara);
-  petModalBody.appendChild(agePara);
-  petModalBody.appendChild(sizePara);
-
-  // Set the adoption link in the modal
-  document.getElementById('adoptionLink').href = `/how-to.html?petName=${encodeURIComponent(name)}`;
-
-  // Show the modal
-  const petModal = new bootstrap.Modal(document.getElementById('petModal'));
-  petModal.show();
 }

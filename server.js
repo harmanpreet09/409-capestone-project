@@ -135,10 +135,15 @@ app.get('/api/locations', (req, res) => {
 
 // Define the /api/filterPets route
 app.post('/api/filterPets', (req, res) => {
-  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC', searchQuery } = req.body;
-  let sql = 'SELECT * FROM pets WHERE 1=1'; // Allows dynamic WHERE clauses
+  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
+  let sql = 'SELECT * FROM pets WHERE 1=1'; // Base query
   const params = [];
 
+  // Add conditions based on the received filters
+  if (type) {
+    sql += ' AND type = ?';
+    params.push(type);
+  }
   if (breed) {
     sql += ' AND breed = ?';
     params.push(breed);
@@ -155,14 +160,8 @@ app.post('/api/filterPets', (req, res) => {
     sql += ' AND location_id = ?';
     params.push(location_id);
   }
-  if (type) {
-    sql += ' AND type = ?';
-    params.push(type);
-  }
-  if (searchQuery) {
-    sql += ' AND (LOWER(name) LIKE ? OR LOWER(breed) LIKE ?)';
-    params.push(`%${searchQuery}%`, `%${searchQuery}%`);
-  }
+
+  // Add sorting
   sql += ` ORDER BY ${sortBy} ${sortOrder}`;
 
   db.query(sql, params, (err, results) => {
@@ -172,6 +171,7 @@ app.post('/api/filterPets', (req, res) => {
     res.json(results);
   });
 });
+
 
 
 // API route for user signup
@@ -285,6 +285,19 @@ app.post('/api/checkStatus', isAuthenticated, (req, res) => {
       return res.status(500).json({ success: false, error: 'Error fetching application status' });
     }
     res.status(200).json({ success: true, applications: results });
+  });
+});
+app.post('/api/contact', (req, res) => {
+  const { userName, userEmail, userMessage } = req.body;
+
+  // Insert the contact form data into your database
+  const sql = 'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)';
+  db.query(sql, [userName, userEmail, userMessage], (err, result) => {
+    if (err) {
+      console.error('Error saving contact form data:', err);
+      return res.status(500).json({ success: false, message: 'Failed to submit form' });
+    }
+    res.json({ success: true, message: 'Form submitted successfully!' });
   });
 });
 
