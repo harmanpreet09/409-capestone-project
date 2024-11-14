@@ -35,10 +35,10 @@ app.use(
 
 // MySQL connection setup
 const db = mysql.createConnection({
-  host: "62.72.28.154",
-  user: "u619996120_demo_root",
-  password: "$4MS7m0]!9u",
-  database: "u619996120_pawmatch",
+  host: 'localhost',
+  user: 'root',
+  password: 'harman@12345',
+  database: 'pawmatch',
 });
 
 // Connect to MySQL database
