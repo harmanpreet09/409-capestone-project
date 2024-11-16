@@ -65,5 +65,5 @@ https://four09-capestone-project-u9y7.onrender.com/
 # Code of Conduct
 [Code of Conduct](https://github.com/harmanpreet09/409-capestone-project/blob/main/CODE%20OF%20CONDUCT.md)
 
-License
+# License
 This project is licensed under the [MIT License](https://github.com/harmanpreet09/409-capestone-project/blob/main/MIT%20License.md).
