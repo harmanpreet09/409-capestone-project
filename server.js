@@ -14,7 +14,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 app.use(cors({
-  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with the actual frontend URL without /index.html
+  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with your frontend URL
   credentials: true,
 }));
 app.use(express.json());
@@ -32,36 +32,18 @@ app.use(
     cookie: {
       secure: false, // Set to true if using HTTPS
       httpOnly: true,
-      sameSite: 'lax', // Lax is recommended for cross-site cookies
-    }
+      sameSite: 'lax',
+    },
   })
 );
 
-// Middleware setup
-// app.use(cors());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// // Serve static files
-// app.use(express.static(path.join(__dirname, 'public')));
-
-// // Configure session middleware
-// app.use(
-//   session({
-//     secret: 'yourSecretKey', // Use a strong secret key
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: { secure: process.env.NODE_ENV === 'production' },
-//   })
-// );
-
 // MySQL connection pool setup
 const dbConfig = {
-  connectionLimit: 10, // Adjust based on your needs
-  host: "62.72.28.154",
-  user: "u619996120_demo_root",
-  password: "$4MS7m0]!9u",
-  database: "u619996120_pawmatch",
+  connectionLimit: 10,
+  host: '62.72.28.154',
+  user: 'u619996120_demo_root',
+  password: '$4MS7m0]!9u',
+  database: 'u619996120_pawmatch',
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -74,7 +56,7 @@ function queryDatabase(sql, params, callback) {
       return callback(err, null);
     }
     connection.query(sql, params, (queryErr, results) => {
-      connection.release(); // Release connection back to the pool
+      connection.release();
       if (queryErr) {
         console.error('Database query error:', queryErr);
         return callback(queryErr, null);
@@ -87,148 +69,34 @@ function queryDatabase(sql, params, callback) {
 // Middleware to check if the user is logged in
 function isAuthenticated(req, res, next) {
   if (req.session.user) {
-    next(); // User is logged in, proceed to the next middleware/route
+    next();
   } else {
     res.status(401).json({ success: false, error: 'You must be logged in to access this resource' });
   }
 }
-// Route to filter pets based on criteria
-// Route to filter pets based on criteria
-app.post('/api/filterPets', (req, res) => {
-  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
-  let sql = 'SELECT * FROM pets WHERE 1=1'; // Base query
-  const params = [];
 
-  // Add conditions based on the received filters
-  if (type) {
-    sql += ' AND type = ?';
-    params.push(type);
-  }
-  if (breed) {
-    sql += ' AND breed = ?';
-    params.push(breed);
-  }
-  if (size) {
-    sql += ' AND size = ?';
-    params.push(size);
-  }
-  if (age) {
-    sql += ' AND age = ?';
-    params.push(age);
-  }
-  if (location_id) {
-    sql += ' AND location_id = ?';
-    params.push(location_id);
+// Save form data in session
+app.post('/api/saveFormData', (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
+
+  if (!pet_name && !user_name && !contact_email && !message) {
+    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
   }
 
-  // Add sorting
-  sql += ` ORDER BY ${sortBy} ${sortOrder}`;
-
-  queryDatabase(sql, params, (err, results) => {
-    if (err) {
-      console.error('Error fetching pets:', err);
-      return res.status(500).json({ error: 'Error fetching pets' });
-    }
-    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
-  });
+  req.session.formData = { pet_name, user_name, contact_email, message };
+  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
 });
 
-// Route to fetch locations
-app.get('/api/locations', (req, res) => {
-  const sql = 'SELECT * FROM locations'; // Adjust based on your locations table
-  queryDatabase(sql, [], (err, results) => {
-    if (err) {
-      console.error('Error fetching locations:', err);
-      return res.status(500).json({ error: 'Error fetching locations' });
-    }
-    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
-  });
-});
-
-
-// Define the routes
-app.post('/api/signup', async (req, res) => {
-  const { username, email, password, confirmPassword } = req.body;
-
-  if (!username || !email || !password || password !== confirmPassword) {
-    return res.status(400).json({ error: 'All fields are required and passwords must match' });
-  }
-
-  const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
-  queryDatabase(checkEmailSql, [email], async (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error checking email' });
-    }
-
-    if (results.length > 0) {
-      return res.status(400).json({ error: 'Email is already registered' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-    queryDatabase(sql, [username, email, hashedPassword], (insertErr) => {
-      if (insertErr) {
-        return res.status(500).json({ error: 'Error inserting user' });
-      }
-      res.status(200).json({ message: 'User registered successfully' });
-    });
-  });
-});
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.status(200).json({ message: 'Logout successful' });
-  });
-});
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  const sql = 'SELECT * FROM users WHERE email = ?';
-
-  queryDatabase(sql, [email], async (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error fetching user' });
-    }
-
-    if (results.length > 0) {
-      const user = results[0];
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (isPasswordValid) {
-        req.session.user = { id: user.id, username: user.username, email: user.email };
-        res.status(200).json({ message: 'Login successful', user: req.session.user });
-      } else {
-        res.status(401).json({ error: 'Invalid credentials' });
-      }
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
-    }
-  });
-});
-
-app.get('/api/session', (req, res) => {
-  if (req.session.user) {
-    res.status(200).json({ loggedIn: true, user: req.session.user });
+// Get form data from session
+app.get('/api/getFormData', (req, res) => {
+  if (req.session.formData) {
+    res.status(200).json({ success: true, formData: req.session.formData });
   } else {
-    res.status(200).json({ loggedIn: false });
+    res.status(200).json({ success: false, message: 'No form data found.' });
   }
 });
 
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.status(200).json({ message: 'Logout successful' });
-  });
-});
-
+// Submit adoption form
 app.post('/api/adoption', (req, res) => {
   const { pet_name, user_name, contact_email, message } = req.body;
 
@@ -241,31 +109,62 @@ app.post('/api/adoption', (req, res) => {
     if (err) {
       return res.status(500).json({ success: false, error: 'Failed to submit adoption request' });
     }
+
+    req.session.formData = null; // Clear form data after submission
     res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
   });
 });
 
-app.post('/api/checkStatus', isAuthenticated, (req, res) => {
-  const email = req.session.user.email;
-
-  const sql = 'SELECT pet_name, status, message FROM adoption_requests WHERE contact_email = ?';
-  queryDatabase(sql, [email], (err, results) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: 'Error fetching application status' });
-    }
-    res.status(200).json({ success: true, applications: results });
-  });
+// Check user session
+app.get('/api/session', (req, res) => {
+  if (req.session.user) {
+    res.status(200).json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.status(200).json({ loggedIn: false });
+  }
 });
 
-app.post('/api/contact', (req, res) => {
-  const { userName, userEmail, userMessage } = req.body;
+// Filter pets based on criteria
+app.post('/api/filterPets', (req, res) => {
+  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
 
-  const sql = 'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)';
-  queryDatabase(sql, [userName, userEmail, userMessage], (err) => {
+  let sql = `
+    SELECT pets.*
+    FROM pets
+    LEFT JOIN adoption_requests ON pets.id = adoption_requests.pet_id
+    WHERE (adoption_requests.status != 'Completed' OR adoption_requests.status IS NULL)
+  `;
+  const params = [];
+
+  if (type) {
+    sql += ' AND pets.type = ?';
+    params.push(type);
+  }
+  if (breed) {
+    sql += ' AND pets.breed = ?';
+    params.push(breed);
+  }
+  if (size) {
+    sql += ' AND pets.size = ?';
+    params.push(size);
+  }
+  if (age) {
+    sql += ' AND pets.age = ?';
+    params.push(age);
+  }
+  if (location_id) {
+    sql += ' AND pets.location_id = ?';
+    params.push(location_id);
+  }
+
+  sql += ` ORDER BY pets.${sortBy} ${sortOrder}`;
+
+  queryDatabase(sql, params, (err, results) => {
     if (err) {
-      return res.status(500).json({ success: false, message: 'Failed to submit form' });
+      console.error('Error fetching pets:', err);
+      return res.status(500).json({ error: 'Error fetching pets' });
     }
-    res.json({ success: true, message: 'Form submitted successfully!' });
+    res.json(Array.isArray(results) ? results : []);
   });
 });
 
@@ -301,7 +200,7 @@ cron.schedule('* * * * *', () => {
   });
 });
 
-// Start the server on a dynamic port for production compatibility
+// Start the server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
