@@ -40,10 +40,10 @@ app.use(
 // MySQL connection pool setup
 const dbConfig = {
   connectionLimit: 10,
-  host: 'localhost',
-  user: 'root',
-  password: 'harman@12345',
-  database: 'pawmatch',
+  host: '62.72.28.154',
+  user: 'u619996120_demo_root',
+  password: '$4MS7m0]!9u',
+  database: 'u619996120_pawmatch',
 };
 
 const pool = mysql.createPool(dbConfig);
