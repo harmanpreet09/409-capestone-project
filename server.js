@@ -14,8 +14,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 app.use(cors({
-  origin: ['https://four09-capestone-project-u9y7.onrender.com'], // Include your frontend domain
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
+  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with your frontend URL
   credentials: true,
 }));
 app.use(express.json());
@@ -27,11 +26,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configure session middleware
 app.use(
   session({
-    secret: 'yourSecretKey', // Replace with a strong secret key
+    secret: 'yourSecretKey', // Use a strong secret key
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // Set to true for HTTPS
+      secure: false, // Set to true if using HTTPS
       httpOnly: true,
       sameSite: 'lax',
     },
@@ -41,10 +40,10 @@ app.use(
 // MySQL connection pool setup
 const dbConfig = {
   connectionLimit: 10,
-  host: "62.72.28.154",
-  user: "u619996120_demo_root",
-  password: "$4MS7m0]!9u",
-  database: "u619996120_pawmatch",
+  host: 'localhost',
+  user: 'root',
+  password: 'harman@12345',
+  database: 'pawmatch',
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -76,127 +75,47 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-// Route to filter pets based on criteria
-app.post('/api/filterPets', (req, res) => {
-  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
-  let sql = 'SELECT * FROM pets WHERE 1=1';
-  const params = [];
+// Save form data in session
+app.post('/api/saveFormData', (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
 
-  if (type) {
-    sql += ' AND type = ?';
-    params.push(type);
-  }
-  if (breed) {
-    sql += ' AND breed = ?';
-    params.push(breed);
-  }
-  if (size) {
-    sql += ' AND size = ?';
-    params.push(size);
-  }
-  if (age) {
-    sql += ' AND age = ?';
-    params.push(age);
-  }
-  if (location_id) {
-    sql += ' AND location_id = ?';
-    params.push(location_id);
+  if (!pet_name && !user_name && !contact_email && !message) {
+    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
   }
 
-  sql += ` ORDER BY ${sortBy} ${sortOrder}`;
+  req.session.formData = { pet_name, user_name, contact_email, message };
+  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
+});
 
-  queryDatabase(sql, params, (err, results) => {
+// Get form data from session
+app.get('/api/getFormData', (req, res) => {
+  if (req.session.formData) {
+    res.status(200).json({ success: true, formData: req.session.formData });
+  } else {
+    res.status(200).json({ success: false, message: 'No form data found.' });
+  }
+});
+
+// Submit adoption form
+app.post('/api/adoption', (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
+
+  if (!pet_name || !user_name || !contact_email) {
+    return res.status(400).json({ success: false, error: 'Pet name, user name, and contact email are required' });
+  }
+
+  const sql = 'INSERT INTO adoption_requests (pet_name, user_name, contact_email, message, status) VALUES (?, ?, ?, ?, ?)';
+  queryDatabase(sql, [pet_name, user_name, contact_email, message, 'Pending'], (err) => {
     if (err) {
-      console.error('Error fetching pets:', err.message);
-      return res.status(500).json({ error: `Error fetching pets: ${err.message}` });
+      return res.status(500).json({ success: false, error: 'Failed to submit adoption request' });
     }
-    res.json(Array.isArray(results) ? results : []);
+
+    req.session.formData = null; // Clear form data after submission
+    res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
   });
 });
 
-// Route to fetch locations
-app.get('/api/locations', (req, res) => {
-  const sql = 'SELECT * FROM locations';
-  queryDatabase(sql, [], (err, results) => {
-    if (err) {
-      console.error('Error fetching locations:', err.message);
-      return res.status(500).json({ error: `Error fetching locations: ${err.message}` });
-    }
-    res.json(Array.isArray(results) ? results : []);
-  });
-});
-
-// Route to handle user signup
-app.post('/api/signup', async (req, res) => {
-  const { username, email, password, confirmPassword } = req.body;
-
-  if (!username || !email || !password || password !== confirmPassword) {
-    return res.status(400).json({ error: 'All fields are required and passwords must match' });
-  }
-
-  const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
-  queryDatabase(checkEmailSql, [email], async (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error checking email' });
-    }
-
-    if (results.length > 0) {
-      return res.status(400).json({ error: 'Email is already registered' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-    queryDatabase(sql, [username, email, hashedPassword], (insertErr) => {
-      if (insertErr) {
-        return res.status(500).json({ error: 'Error inserting user' });
-      }
-      res.status(200).json({ message: 'User registered successfully' });
-    });
-  });
-});
-
-// Route to handle user logout
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.status(200).json({ message: 'Logout successful' });
-  });
-});
-
-// Route to handle user login
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  const sql = 'SELECT * FROM users WHERE email = ?';
-
-  queryDatabase(sql, [email], async (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error fetching user' });
-    }
-
-    if (results.length > 0) {
-      const user = results[0];
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (isPasswordValid) {
-        req.session.user = { id: user.id, username: user.username, email: user.email };
-        res.status(200).json({ message: 'Login successful', user: req.session.user });
-      } else {
-        res.status(401).json({ error: 'Invalid credentials' });
-      }
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
-    }
-  });
-});
-
-// Route to check session
+// Check user session
 app.get('/api/session', (req, res) => {
   if (req.session.user) {
     res.status(200).json({ loggedIn: true, user: req.session.user });
@@ -205,7 +124,51 @@ app.get('/api/session', (req, res) => {
   }
 });
 
-// Cron job for updating adoption request statuses
+// Filter pets based on criteria
+app.post('/api/filterPets', (req, res) => {
+  const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
+
+  let sql = `
+    SELECT pets.*
+    FROM pets
+    LEFT JOIN adoption_requests ON pets.id = adoption_requests.pet_id
+    WHERE (adoption_requests.status != 'Completed' OR adoption_requests.status IS NULL)
+  `;
+  const params = [];
+
+  if (type) {
+    sql += ' AND pets.type = ?';
+    params.push(type);
+  }
+  if (breed) {
+    sql += ' AND pets.breed = ?';
+    params.push(breed);
+  }
+  if (size) {
+    sql += ' AND pets.size = ?';
+    params.push(size);
+  }
+  if (age) {
+    sql += ' AND pets.age = ?';
+    params.push(age);
+  }
+  if (location_id) {
+    sql += ' AND pets.location_id = ?';
+    params.push(location_id);
+  }
+
+  sql += ` ORDER BY pets.${sortBy} ${sortOrder}`;
+
+  queryDatabase(sql, params, (err, results) => {
+    if (err) {
+      console.error('Error fetching pets:', err);
+      return res.status(500).json({ error: 'Error fetching pets' });
+    }
+    res.json(Array.isArray(results) ? results : []);
+  });
+});
+
+// Cron job for updating statuses
 cron.schedule('* * * * *', () => {
   console.log('Running status update job...');
   const updateToUnderProcessSql = `

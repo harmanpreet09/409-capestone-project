@@ -1,10 +1,10 @@
-document.getElementById('filterBtn').addEventListener('click', function () {
+document.getElementById('filterBtn').addEventListener('click', function() {
   filterButton();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   // Fetch locations from the backend and populate the location dropdown
-  fetch('https://four09-capestone-project-u9y7.onrender.com/api/locations')
+  fetch('http://localhost:4000/api/locations')
     .then(response => response.json())
     .then(locations => {
       const locationSelect = document.getElementById('filterLocation');
@@ -39,7 +39,7 @@ function filterButton() {
   petListings.textContent = 'Loading pets...';
 
   // Send the filters to the backend
-  fetch('https://four09-capestone-project-u9y7.onrender.com/api/filterPets', {
+  fetch('http://localhost:4000/api/filterPets', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -48,12 +48,13 @@ function filterButton() {
   })
     .then(response => response.json())
     .then(pets => {
+      console.log('Pets response:', pets);
       petListings.textContent = '';
-
+  
       if (!Array.isArray(pets)) {
         throw new Error('Expected an array but got a different data type');
       }
-
+  
       if (pets.length === 0) {
         const noPetsMsg = document.createElement('p');
         noPetsMsg.textContent = 'No pets found matching your filters.';
@@ -74,9 +75,7 @@ function filterButton() {
         petImg.alt = pet.name;
         petImg.classList.add('card-img-top');
         petImg.loading = 'lazy';
-        petImg.onerror = function () {
-          this.src = '/images/default-pet-image.jpg';
-        };
+        petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
 
         const cardBody = document.createElement('div');
         cardBody.classList.add('card-body');
@@ -95,10 +94,11 @@ function filterButton() {
         const moreInfoButton = document.createElement('button');
         moreInfoButton.classList.add('btn', 'btn-primary', 'mt-2');
         moreInfoButton.textContent = 'MORE INFORMATION';
-        moreInfoButton.onclick = function () {
+        moreInfoButton.onclick = function() {
           showPetModal(pet.name, pet.breed, pet.age, pet.size, pet.image);
         };
 
+        // Append elements to create the card structure
         cardBody.appendChild(petTitle);
         cardBody.appendChild(petInfo);
         cardBody.appendChild(petSize);
@@ -118,14 +118,17 @@ function filterButton() {
 }
 
 function showPetModal(name, breed, age, size, image) {
+  // Set the modal title
   const modalTitle = document.getElementById('petModalLabel');
   modalTitle.textContent = name;
 
+  // Clear any existing content in the modal body
   const modalBody = document.getElementById('petModalBody');
   while (modalBody.firstChild) {
     modalBody.removeChild(modalBody.firstChild);
   }
 
+  // Create and append the image element
   const petImage = document.createElement('img');
   petImage.src = image;
   petImage.alt = name;
@@ -145,6 +148,7 @@ function showPetModal(name, breed, age, size, image) {
   sizeInfo.textContent = `Size: ${size}`;
   modalBody.appendChild(sizeInfo);
 
+  // Initialize and show the modal using Bootstrap's modal API
   const petModal = new bootstrap.Modal(document.getElementById('petModal'));
   petModal.show();
 }
