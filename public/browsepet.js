@@ -1,21 +1,26 @@
-document.getElementById('filterBtn').addEventListener('click', function() {
+// Determine the base URL based on the environment
+const API_BASE_URL = window.location.origin.includes('localhost')
+  ? 'http://localhost:4000'
+  : 'https://four09-capestone-project-u9y7.onrender.com';
+
+document.getElementById('filterBtn').addEventListener('click', function () {
   filterButton();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   // Fetch locations from the backend and populate the location dropdown
-  fetch('http://localhost:4000/api/locations')
-    .then(response => response.json())
-    .then(locations => {
+  fetch(`${API_BASE_URL}/api/locations`)
+    .then((response) => response.json())
+    .then((locations) => {
       const locationSelect = document.getElementById('filterLocation');
-      locations.forEach(location => {
+      locations.forEach((location) => {
         const option = document.createElement('option');
         option.value = location.id;
         option.textContent = location.name;
         locationSelect.appendChild(option);
       });
     })
-    .catch(error => console.error('Error fetching locations:', error));
+    .catch((error) => console.error('Error fetching locations:', error));
 
   // Run initial filter to load pets without filters applied
   filterButton();
@@ -39,22 +44,27 @@ function filterButton() {
   petListings.textContent = 'Loading pets...';
 
   // Send the filters to the backend
-  fetch('http://localhost:4000/api/filterPets', {
+  fetch(`${API_BASE_URL}/api/filterPets`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(filters),
   })
-    .then(response => response.json())
-    .then(pets => {
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((pets) => {
       console.log('Pets response:', pets);
       petListings.textContent = '';
-  
+
       if (!Array.isArray(pets)) {
         throw new Error('Expected an array but got a different data type');
       }
-  
+
       if (pets.length === 0) {
         const noPetsMsg = document.createElement('p');
         noPetsMsg.textContent = 'No pets found matching your filters.';
@@ -63,7 +73,7 @@ function filterButton() {
       }
 
       // Display each pet card
-      pets.forEach(pet => {
+      pets.forEach((pet) => {
         const colDiv = document.createElement('div');
         colDiv.classList.add('col-md-4', 'mb-4');
 
@@ -75,7 +85,9 @@ function filterButton() {
         petImg.alt = pet.name;
         petImg.classList.add('card-img-top');
         petImg.loading = 'lazy';
-        petImg.onerror = function() { this.src = '/images/default-pet-image.jpg'; };
+        petImg.onerror = function () {
+          this.src = '/images/default-pet-image.jpg';
+        };
 
         const cardBody = document.createElement('div');
         cardBody.classList.add('card-body');
@@ -94,7 +106,7 @@ function filterButton() {
         const moreInfoButton = document.createElement('button');
         moreInfoButton.classList.add('btn', 'btn-primary', 'mt-2');
         moreInfoButton.textContent = 'MORE INFORMATION';
-        moreInfoButton.onclick = function() {
+        moreInfoButton.onclick = function () {
           showPetModal(pet.name, pet.breed, pet.age, pet.size, pet.image);
         };
 
@@ -109,7 +121,7 @@ function filterButton() {
         petListings.appendChild(colDiv);
       });
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('Error fetching pets:', error);
       const errorMsg = document.createElement('p');
       errorMsg.textContent = 'Failed to fetch pets. Please try again later.';
