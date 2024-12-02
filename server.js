@@ -14,7 +14,8 @@ const __dirname = dirname(__filename);
 
 const app = express();
 app.use(cors({
-  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with the actual frontend URL without /index.html
+  origin: ['https://four09-capestone-project-u9y7.onrender.com'], // Include your frontend domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
   credentials: true,
 }));
 app.use(express.json());
@@ -26,38 +27,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configure session middleware
 app.use(
   session({
-    secret: 'yourSecretKey', // Use a strong secret key
+    secret: 'yourSecretKey', // Replace with a strong secret key
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true if using HTTPS
+      secure: true, // Set to true for HTTPS
       httpOnly: true,
-      sameSite: 'lax', // Lax is recommended for cross-site cookies
-    }
+      sameSite: 'lax',
+    },
   })
 );
 
-// Middleware setup
-// app.use(cors());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// // Serve static files
-// app.use(express.static(path.join(__dirname, 'public')));
-
-// // Configure session middleware
-// app.use(
-//   session({
-//     secret: 'yourSecretKey', // Use a strong secret key
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: { secure: process.env.NODE_ENV === 'production' },
-//   })
-// );
-
 // MySQL connection pool setup
 const dbConfig = {
-  connectionLimit: 10, // Adjust based on your needs
+  connectionLimit: 10,
   host: "62.72.28.154",
   user: "u619996120_demo_root",
   password: "$4MS7m0]!9u",
@@ -74,7 +57,7 @@ function queryDatabase(sql, params, callback) {
       return callback(err, null);
     }
     connection.query(sql, params, (queryErr, results) => {
-      connection.release(); // Release connection back to the pool
+      connection.release();
       if (queryErr) {
         console.error('Database query error:', queryErr);
         return callback(queryErr, null);
@@ -87,19 +70,18 @@ function queryDatabase(sql, params, callback) {
 // Middleware to check if the user is logged in
 function isAuthenticated(req, res, next) {
   if (req.session.user) {
-    next(); // User is logged in, proceed to the next middleware/route
+    next();
   } else {
     res.status(401).json({ success: false, error: 'You must be logged in to access this resource' });
   }
 }
-// Route to filter pets based on criteria
+
 // Route to filter pets based on criteria
 app.post('/api/filterPets', (req, res) => {
   const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
-  let sql = 'SELECT * FROM pets WHERE 1=1'; // Base query
+  let sql = 'SELECT * FROM pets WHERE 1=1';
   const params = [];
 
-  // Add conditions based on the received filters
   if (type) {
     sql += ' AND type = ?';
     params.push(type);
@@ -121,32 +103,30 @@ app.post('/api/filterPets', (req, res) => {
     params.push(location_id);
   }
 
-  // Add sorting
   sql += ` ORDER BY ${sortBy} ${sortOrder}`;
 
   queryDatabase(sql, params, (err, results) => {
     if (err) {
-      console.error('Error fetching pets:', err);
-      return res.status(500).json({ error: 'Error fetching pets' });
+      console.error('Error fetching pets:', err.message);
+      return res.status(500).json({ error: `Error fetching pets: ${err.message}` });
     }
-    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
+    res.json(Array.isArray(results) ? results : []);
   });
 });
 
 // Route to fetch locations
 app.get('/api/locations', (req, res) => {
-  const sql = 'SELECT * FROM locations'; // Adjust based on your locations table
+  const sql = 'SELECT * FROM locations';
   queryDatabase(sql, [], (err, results) => {
     if (err) {
-      console.error('Error fetching locations:', err);
-      return res.status(500).json({ error: 'Error fetching locations' });
+      console.error('Error fetching locations:', err.message);
+      return res.status(500).json({ error: `Error fetching locations: ${err.message}` });
     }
-    res.json(Array.isArray(results) ? results : []); // Ensure response is always an array
+    res.json(Array.isArray(results) ? results : []);
   });
 });
 
-
-// Define the routes
+// Route to handle user signup
 app.post('/api/signup', async (req, res) => {
   const { username, email, password, confirmPassword } = req.body;
 
@@ -174,6 +154,8 @@ app.post('/api/signup', async (req, res) => {
     });
   });
 });
+
+// Route to handle user logout
 app.post('/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -182,6 +164,8 @@ app.post('/api/logout', (req, res) => {
     res.status(200).json({ message: 'Logout successful' });
   });
 });
+
+// Route to handle user login
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -212,6 +196,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+// Route to check session
 app.get('/api/session', (req, res) => {
   if (req.session.user) {
     res.status(200).json({ loggedIn: true, user: req.session.user });
@@ -220,56 +205,7 @@ app.get('/api/session', (req, res) => {
   }
 });
 
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to logout' });
-    }
-    res.status(200).json({ message: 'Logout successful' });
-  });
-});
-
-app.post('/api/adoption', (req, res) => {
-  const { pet_name, user_name, contact_email, message } = req.body;
-
-  if (!pet_name || !user_name || !contact_email) {
-    return res.status(400).json({ success: false, error: 'Pet name, user name, and contact email are required' });
-  }
-
-  const sql = 'INSERT INTO adoption_requests (pet_name, user_name, contact_email, message, status) VALUES (?, ?, ?, ?, ?)';
-  queryDatabase(sql, [pet_name, user_name, contact_email, message, 'Pending'], (err) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: 'Failed to submit adoption request' });
-    }
-    res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
-  });
-});
-
-app.post('/api/checkStatus', isAuthenticated, (req, res) => {
-  const email = req.session.user.email;
-
-  const sql = 'SELECT pet_name, status, message FROM adoption_requests WHERE contact_email = ?';
-  queryDatabase(sql, [email], (err, results) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: 'Error fetching application status' });
-    }
-    res.status(200).json({ success: true, applications: results });
-  });
-});
-
-app.post('/api/contact', (req, res) => {
-  const { userName, userEmail, userMessage } = req.body;
-
-  const sql = 'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)';
-  queryDatabase(sql, [userName, userEmail, userMessage], (err) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Failed to submit form' });
-    }
-    res.json({ success: true, message: 'Form submitted successfully!' });
-  });
-});
-
-// Cron job for updating statuses
+// Cron job for updating adoption request statuses
 cron.schedule('* * * * *', () => {
   console.log('Running status update job...');
   const updateToUnderProcessSql = `
@@ -301,7 +237,7 @@ cron.schedule('* * * * *', () => {
   });
 });
 
-// Start the server on a dynamic port for production compatibility
+// Start the server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
