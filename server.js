@@ -13,33 +13,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-
-// CORS configuration
-const allowedOrigins = [
-  'https://four09-capestone-project-u9y7.onrender.com',
-  'http://localhost:4000',
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with your frontend URL
   credentials: true,
 }));
-
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure session middleware
 app.use(
-  session({
-    secret: 'yourSecretKey',
+  session({ 
+    secret: 'yourSecretKey', // Use a strong secret key
     resave: false,
     saveUninitialized: false,
     cookie: {
