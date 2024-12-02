@@ -13,10 +13,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const allowedOrigins = [
+  'https://four09-capestone-project-u9y7.onrender.com', // Live domain
+  'http://localhost:4000', // Local development
+];
+
 app.use(cors({
-  origin: 'https://four09-capestone-project-u9y7.onrender.com', // Replace with your frontend URL
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -123,6 +135,17 @@ app.get('/api/session', (req, res) => {
     res.status(200).json({ loggedIn: false });
   }
 });
+app.get('/api/locations', (req, res) => {
+  const sql = 'SELECT id, name FROM locations'; // Replace with your table and column names
+  queryDatabase(sql, [], (err, results) => {
+    if (err) {
+      console.error('Error fetching locations:', err);
+      return res.status(500).json({ error: 'Failed to fetch locations' });
+    }
+    res.json(results);
+  });
+});
+
 
 // Filter pets based on criteria
 app.post('/api/filterPets', (req, res) => {
@@ -159,6 +182,8 @@ app.post('/api/filterPets', (req, res) => {
 
   sql += ` ORDER BY pets.${sortBy} ${sortOrder}`;
 
+  console.log('Executing SQL:', sql, 'with params:', params);
+
   queryDatabase(sql, params, (err, results) => {
     if (err) {
       console.error('Error fetching pets:', err);
@@ -167,6 +192,7 @@ app.post('/api/filterPets', (req, res) => {
     res.json(Array.isArray(results) ? results : []);
   });
 });
+
 
 // Cron job for updating statuses
 cron.schedule('* * * * *', () => {
