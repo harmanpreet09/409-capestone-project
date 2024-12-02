@@ -31,11 +31,12 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  credentials: true, // Allow credentials like cookies
 }));
 
-// Handle preflight `OPTIONS` requests
+// Handle preflight `OPTIONS` requests globally
 app.options('*', cors());
+
 
 // Middleware configuration
 app.use(express.json());

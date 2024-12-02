@@ -10,7 +10,12 @@ document.getElementById('filterBtn').addEventListener('click', function () {
 document.addEventListener('DOMContentLoaded', () => {
   // Fetch locations from the backend and populate the location dropdown
   fetch(`${API_BASE_URL}/api/locations`)
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then((locations) => {
       const locationSelect = document.getElementById('filterLocation');
       locations.forEach((location) => {
@@ -20,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         locationSelect.appendChild(option);
       });
     })
-    .catch((error) => console.error('Error fetching locations:', error));
+    .catch((error) => console.error('Error fetching locations:', error.message, error));
 
   // Run initial filter to load pets without filters applied
   filterButton();
@@ -122,7 +127,7 @@ function filterButton() {
       });
     })
     .catch((error) => {
-      console.error('Error fetching pets:', error);
+      console.error('Error fetching pets:', error.message, error);
       const errorMsg = document.createElement('p');
       errorMsg.textContent = 'Failed to fetch pets. Please try again later.';
       petListings.appendChild(errorMsg);
