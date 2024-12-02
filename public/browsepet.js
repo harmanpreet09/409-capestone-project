@@ -39,7 +39,7 @@ function filterButton() {
   petListings.textContent = 'Loading pets...';
 
   // Send the filters to the backend
-  fetch('https://four09-capestone-project-u9y7.onrender.com/api/filterPets', {
+  fetch('http://localhost:4000/api/filterPets', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
