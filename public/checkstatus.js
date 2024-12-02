@@ -1,85 +1,54 @@
-document.getElementById('adoptionForm').addEventListener('submit', function (e) {
+document.getElementById('checkStatusForm').addEventListener('submit', function (e) {
   e.preventDefault();
 
-  const formData = {
-    pet_name: document.getElementById('petName').value,
-    user_name: document.getElementById('userName').value,
-    contact_email: document.getElementById('contactEmail').value,
-    message: document.getElementById('message').value,
-  };
+  const email = document.getElementById('checkEmail').value;
+  if (!email) {
+    alert('Please enter your email.');
+    return;
+  }
 
-  fetch('/api/session')
-    .then((response) => response.json())
+  const statusResponse = document.getElementById('statusResponse');
+  statusResponse.innerHTML = '<p>Loading...</p>'; // Show a loading message
+
+  fetch('/api/checkStatus', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Failed to fetch status.');
+      }
+      return response.json();
+    })
     .then((data) => {
-      const formResponse = document.getElementById('formResponse');
-      formResponse.textContent = '';
+      statusResponse.innerHTML = ''; // Clear previous messages
 
-      if (data.loggedIn) {
-        fetch('/api/adoption', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            const alertDiv = document.createElement('div');
-            alertDiv.classList.add('alert');
-
-            if (data.success) {
-              alertDiv.classList.add('alert-success');
-              alertDiv.textContent = data.message;
-              localStorage.removeItem('adoptionFormData');
-            } else {
-              alertDiv.classList.add('alert-danger');
-              alertDiv.textContent = data.error;
-            }
-
-            formResponse.appendChild(alertDiv);
-          })
-          .catch((error) => {
-            const alertDiv = document.createElement('div');
-            alertDiv.classList.add('alert', 'alert-danger');
-            alertDiv.textContent = 'Error submitting form';
-            formResponse.appendChild(alertDiv);
+      if (data.success) {
+        if (data.applications.length === 0) {
+          // No applications found
+          statusResponse.innerHTML = '<p>No applications found for this email.</p>';
+        } else {
+          // Display application statuses
+          data.applications.forEach((application) => {
+            const statusDiv = document.createElement('div');
+            statusDiv.classList.add('alert', 'alert-info');
+            statusDiv.innerHTML = `
+              <strong>Pet Name:</strong> ${application.pet_name}<br>
+              <strong>Status:</strong> ${application.status}<br>
+              <strong>Submitted On:</strong> ${new Date(application.created_at).toLocaleDateString()}
+            `;
+            statusResponse.appendChild(statusDiv);
           });
+        }
       } else {
-        fetch('/api/saveFormData', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        })
-          .then(() => {
-            alert('Please log in to submit an adoption request.');
-            window.location.href = '/login.html';
-          })
-          .catch((error) => console.error('Error saving form data:', error));
+        statusResponse.innerHTML = '<p>An error occurred. Please try again later.</p>';
       }
     })
     .catch((error) => {
-      console.error('Error checking login status:', error);
-      const formResponse = document.getElementById('formResponse');
-      const alertDiv = document.createElement('div');
-      alertDiv.classList.add('alert', 'alert-danger');
-      alertDiv.textContent = 'Error checking login status';
-      formResponse.appendChild(alertDiv);
+      console.error(error);
+      statusResponse.innerHTML = '<p>Error fetching status. Please try again later.</p>';
     });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  fetch('/api/getFormData')
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.formData) {
-        const { pet_name, user_name, contact_email, message } = data.formData;
-        document.getElementById('petName').value = pet_name || '';
-        document.getElementById('userName').value = user_name || '';
-        document.getElementById('contactEmail').value = contact_email || '';
-        document.getElementById('message').value = message || '';
-      }
-    })
-    .catch((error) => console.error('Error fetching form data:', error));
 });

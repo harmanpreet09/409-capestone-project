@@ -16,8 +16,8 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = [
-  'https://four09-capestone-project-u9y7.onrender.com', // Live domain
-  'http://localhost:4000', // Local development
+  'https://four09-capestone-project-u9y7.onrender.com',
+  'http://localhost:4000',
 ];
 
 app.use(cors({
@@ -25,20 +25,13 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Allow credentials like cookies
+  credentials: true,
 }));
 
-// Handle preflight `OPTIONS` requests globally
-app.options('*', cors());
-
-
-// Middleware configuration
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -46,11 +39,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configure session middleware
 app.use(
   session({
-    secret: 'yourSecureSecretKey', // Replace with a strong secret key
+    secret: 'yourSecretKey',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Secure cookies in production
+      secure: false, // Set to true if using HTTPS
       httpOnly: true,
       sameSite: 'lax',
     },
@@ -59,7 +52,7 @@ app.use(
 
 // MySQL connection pool setup
 const dbConfig = {
-  connectionLimit: 10,
+  connectionLimit: 10, // Set a reasonable pool limit
   host: '62.72.28.154',
   user: 'u619996120_demo_root',
   password: '$4MS7m0]!9u',
@@ -69,36 +62,123 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 // Helper function to query the database
-function queryDatabase(sql, params, callback) {
-  pool.getConnection((err, connection) => {
-    if (err) {
-      console.error('Error getting MySQL connection:', err);
-      return callback(err, null);
-    }
-    connection.query(sql, params, (queryErr, results) => {
-      connection.release();
-      if (queryErr) {
-        console.error('Database query error:', queryErr);
-        return callback(queryErr, null);
+const queryDatabase = async (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        return reject(err);
       }
-      callback(null, results);
+      connection.query(sql, params, (queryErr, results) => {
+        connection.release();
+        if (queryErr) {
+          return reject(queryErr);
+        }
+        resolve(results);
+      });
     });
   });
-}
+};
 
-// API endpoints
-app.get('/api/locations', (req, res) => {
-  const sql = 'SELECT id, name FROM locations';
-  queryDatabase(sql, [], (err, results) => {
-    if (err) {
-      console.error('Error fetching locations:', err);
-      return res.status(500).json({ error: 'Failed to fetch locations' });
+// Middleware to check if the user is logged in
+const isAuthenticated = (req, res, next) => {
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ success: false, error: 'You must be logged in to access this resource' });
+  }
+};
+
+// Endpoints
+
+// API to check adoption status
+app.post('/api/checkStatus', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, error: 'Email is required' });
+  }
+
+  try {
+    const statuses = await queryDatabase(
+      'SELECT pet_name, status, created_at FROM adoption_requests WHERE contact_email = ?',
+      [email]
+    );
+
+    if (statuses.length > 0) {
+      res.status(200).json({ success: true, applications: statuses });
+    } else {
+      res.status(200).json({ success: true, applications: [] }); // No requests found
     }
-    res.json(results);
-  });
+  } catch (error) {
+    console.error('Error fetching adoption status:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch adoption status' });
+  }
 });
 
-app.post('/api/filterPets', (req, res) => {
+
+// Save form data in session
+app.post('/api/saveFormData', (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
+
+  if (!pet_name || !user_name || !contact_email || !message) {
+    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
+  }
+
+  req.session.formData = { pet_name, user_name, contact_email, message };
+  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
+});
+
+// Get form data from session
+app.get('/api/getFormData', (req, res) => {
+  if (req.session.formData) {
+    res.status(200).json({ success: true, formData: req.session.formData });
+  } else {
+    res.status(200).json({ success: false, message: 'No form data found.' });
+  }
+});
+
+// Submit adoption form
+app.post('/api/adoption', async (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
+
+  if (!pet_name || !user_name || !contact_email) {
+    return res.status(400).json({ success: false, error: 'Pet name, user name, and contact email are required' });
+  }
+
+  const sql = 'INSERT INTO adoption_requests (pet_name, user_name, contact_email, message, status) VALUES (?, ?, ?, ?, ?)';
+
+  try {
+    await queryDatabase(sql, [pet_name, user_name, contact_email, message, 'Pending']);
+    req.session.formData = null; // Clear form data after submission
+    res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
+  } catch (error) {
+    console.error('Error submitting adoption request:', error);
+    res.status(500).json({ success: false, error: 'Failed to submit adoption request' });
+  }
+});
+
+// Check user session
+app.get('/api/session', (req, res) => {
+  if (req.session.user) {
+    res.status(200).json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.status(200).json({ loggedIn: false });
+  }
+});
+
+// Fetch locations
+app.get('/api/locations', async (req, res) => {
+  try {
+    const locations = await queryDatabase('SELECT id, name FROM locations');
+    res.json(locations);
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+    res.status(500).json({ error: 'Failed to fetch locations' });
+  }
+});
+
+// Filter pets
+app.post('/api/filterPets', async (req, res) => {
   const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
 
   let sql = `
@@ -131,82 +211,102 @@ app.post('/api/filterPets', (req, res) => {
   }
 
   sql += ` ORDER BY pets.${sortBy} ${sortOrder}`;
-  console.log('Executing SQL:', sql, 'with params:', params);
 
-  queryDatabase(sql, params, (err, results) => {
-    if (err) {
-      console.error('Error fetching pets:', err);
-      return res.status(500).json({ error: 'Error fetching pets' });
-    }
-    res.json(Array.isArray(results) ? results : []);
-  });
-});
-
-// Save form data in session
-app.post('/api/saveFormData', (req, res) => {
-  const { pet_name, user_name, contact_email, message } = req.body;
-
-  if (!pet_name || !user_name || !contact_email || !message) {
-    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
-  }
-
-  req.session.formData = { pet_name, user_name, contact_email, message };
-  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
-});
-
-// Get form data from session
-app.get('/api/getFormData', (req, res) => {
-  if (req.session.formData) {
-    res.status(200).json({ success: true, formData: req.session.formData });
-  } else {
-    res.status(200).json({ success: false, message: 'No form data found.' });
+  try {
+    const pets = await queryDatabase(sql, params);
+    res.json(pets);
+  } catch (error) {
+    console.error('Error fetching pets:', error);
+    res.status(500).json({ error: 'Error fetching pets' });
   }
 });
 
-// Check user session
-app.get('/api/session', (req, res) => {
-  if (req.session.user) {
-    res.status(200).json({ loggedIn: true, user: req.session.user });
-  } else {
-    res.status(200).json({ loggedIn: false });
-  }
-});
-
-// Cron job for updating adoption statuses
-cron.schedule('* * * * *', () => {
+// Cron job for updating statuses
+cron.schedule('* * * * *', async () => {
   console.log('Running status update job...');
-  const updateToUnderProcessSql = `
-    UPDATE adoption_requests 
-    SET status = 'Under Process' 
-    WHERE status = 'Pending' 
-    AND created_at <= NOW() - INTERVAL 30 SECOND
-  `;
-  queryDatabase(updateToUnderProcessSql, [], (err, result) => {
-    if (err) {
-      console.error('Error updating status to Under Process:', err);
-    } else {
-      console.log(`Updated ${result.affectedRows} records to Under Process`);
-    }
-  });
+  
+  try {
+    // Update 'Pending' requests to 'Under Process'
+    const updateToUnderProcessSql = `
+      UPDATE adoption_requests 
+      SET status = 'Under Process' 
+      WHERE status = 'Pending' 
+      AND created_at <= NOW() - INTERVAL 30 SECOND
+    `;
+    const underProcessResult = await queryDatabase(updateToUnderProcessSql);
+    console.log(`Updated to 'Under Process': ${underProcessResult.affectedRows || 0} records`);
 
-  const updateToCompletedSql = `
-    UPDATE adoption_requests 
-    SET status = 'Completed' 
-    WHERE status = 'Under Process' 
-    AND created_at <= NOW() - INTERVAL 1 MINUTE
-  `;
-  queryDatabase(updateToCompletedSql, [], (err, result) => {
-    if (err) {
-      console.error('Error updating status to Completed:', err);
-    } else {
-      console.log(`Updated ${result.affectedRows} records to Completed`);
-    }
-  });
+    // Update 'Under Process' requests to 'Completed'
+    const updateToCompletedSql = `
+      UPDATE adoption_requests 
+      SET status = 'Completed' 
+      WHERE status = 'Under Process' 
+      AND created_at <= NOW() - INTERVAL 1 MINUTE
+    `;
+    const completedResult = await queryDatabase(updateToCompletedSql);
+    console.log(`Updated to 'Completed': ${completedResult.affectedRows || 0} records`);
+  } catch (error) {
+    console.error('Error during cron job:', error);
+  }
 });
 
-// Catch-all for undefined routes
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+
+
+
+app.post('/api/signup', async (req, res) => {
+  const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ success: false, error: 'All fields are required' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await queryDatabase('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, hashedPassword]);
+    res.status(200).json({ success: true, message: 'Signup successful!' });
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).json({ success: false, error: 'Failed to sign up' });
+  }
+});
+
+// User login
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, error: 'Email and password are required' });
+  }
+
+  try {
+    const users = await queryDatabase('SELECT * FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const user = users[0];
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    req.session.user = { id: user.id, username: user.username, email: user.email };
+    res.status(200).json({ success: true, message: 'Login successful!', user: req.session.user });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ success: false, error: 'Failed to log in' });
+  }
+});
+
+// User logout
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error during logout:', err);
+      return res.status(500).json({ success: false, error: 'Failed to log out' });
+    }
+    res.status(200).json({ success: true, message: 'Logout successful!' });
+  });
 });
 
 // Start the server
