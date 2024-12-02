@@ -13,6 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+
+// CORS configuration
 const allowedOrigins = [
   'https://four09-capestone-project-u9y7.onrender.com', // Live domain
   'http://localhost:4000', // Local development
@@ -23,26 +25,31 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 
+// Handle preflight `OPTIONS` requests
+app.options('*', cors());
+
+// Middleware configuration
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure session middleware
 app.use(
   session({
-    secret: 'yourSecretKey', // Use a strong secret key
+    secret: 'yourSecureSecretKey', // Replace with a strong secret key
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true if using HTTPS
+      secure: process.env.NODE_ENV === 'production', // Secure cookies in production
       httpOnly: true,
       sameSite: 'lax',
     },
@@ -78,65 +85,9 @@ function queryDatabase(sql, params, callback) {
   });
 }
 
-// Middleware to check if the user is logged in
-function isAuthenticated(req, res, next) {
-  if (req.session.user) {
-    next();
-  } else {
-    res.status(401).json({ success: false, error: 'You must be logged in to access this resource' });
-  }
-}
-
-// Save form data in session
-app.post('/api/saveFormData', (req, res) => {
-  const { pet_name, user_name, contact_email, message } = req.body;
-
-  if (!pet_name && !user_name && !contact_email && !message) {
-    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
-  }
-
-  req.session.formData = { pet_name, user_name, contact_email, message };
-  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
-});
-
-// Get form data from session
-app.get('/api/getFormData', (req, res) => {
-  if (req.session.formData) {
-    res.status(200).json({ success: true, formData: req.session.formData });
-  } else {
-    res.status(200).json({ success: false, message: 'No form data found.' });
-  }
-});
-
-// Submit adoption form
-app.post('/api/adoption', (req, res) => {
-  const { pet_name, user_name, contact_email, message } = req.body;
-
-  if (!pet_name || !user_name || !contact_email) {
-    return res.status(400).json({ success: false, error: 'Pet name, user name, and contact email are required' });
-  }
-
-  const sql = 'INSERT INTO adoption_requests (pet_name, user_name, contact_email, message, status) VALUES (?, ?, ?, ?, ?)';
-  queryDatabase(sql, [pet_name, user_name, contact_email, message, 'Pending'], (err) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: 'Failed to submit adoption request' });
-    }
-
-    req.session.formData = null; // Clear form data after submission
-    res.status(200).json({ success: true, message: 'Adoption request submitted successfully!' });
-  });
-});
-
-// Check user session
-app.get('/api/session', (req, res) => {
-  if (req.session.user) {
-    res.status(200).json({ loggedIn: true, user: req.session.user });
-  } else {
-    res.status(200).json({ loggedIn: false });
-  }
-});
+// API endpoints
 app.get('/api/locations', (req, res) => {
-  const sql = 'SELECT id, name FROM locations'; // Replace with your table and column names
+  const sql = 'SELECT id, name FROM locations';
   queryDatabase(sql, [], (err, results) => {
     if (err) {
       console.error('Error fetching locations:', err);
@@ -146,8 +97,6 @@ app.get('/api/locations', (req, res) => {
   });
 });
 
-
-// Filter pets based on criteria
 app.post('/api/filterPets', (req, res) => {
   const { breed, size, age, location_id, type, sortBy = 'name', sortOrder = 'ASC' } = req.body;
 
@@ -181,7 +130,6 @@ app.post('/api/filterPets', (req, res) => {
   }
 
   sql += ` ORDER BY pets.${sortBy} ${sortOrder}`;
-
   console.log('Executing SQL:', sql, 'with params:', params);
 
   queryDatabase(sql, params, (err, results) => {
@@ -193,8 +141,37 @@ app.post('/api/filterPets', (req, res) => {
   });
 });
 
+// Save form data in session
+app.post('/api/saveFormData', (req, res) => {
+  const { pet_name, user_name, contact_email, message } = req.body;
 
-// Cron job for updating statuses
+  if (!pet_name || !user_name || !contact_email || !message) {
+    return res.status(400).json({ success: false, message: 'Form data is incomplete.' });
+  }
+
+  req.session.formData = { pet_name, user_name, contact_email, message };
+  res.status(200).json({ success: true, message: 'Form data saved successfully!' });
+});
+
+// Get form data from session
+app.get('/api/getFormData', (req, res) => {
+  if (req.session.formData) {
+    res.status(200).json({ success: true, formData: req.session.formData });
+  } else {
+    res.status(200).json({ success: false, message: 'No form data found.' });
+  }
+});
+
+// Check user session
+app.get('/api/session', (req, res) => {
+  if (req.session.user) {
+    res.status(200).json({ loggedIn: true, user: req.session.user });
+  } else {
+    res.status(200).json({ loggedIn: false });
+  }
+});
+
+// Cron job for updating adoption statuses
 cron.schedule('* * * * *', () => {
   console.log('Running status update job...');
   const updateToUnderProcessSql = `
@@ -224,6 +201,11 @@ cron.schedule('* * * * *', () => {
       console.log(`Updated ${result.affectedRows} records to Completed`);
     }
   });
+});
+
+// Catch-all for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // Start the server
